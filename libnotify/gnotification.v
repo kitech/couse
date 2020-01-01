@@ -3,6 +3,7 @@ module xlibv
 // seems gnotification is successor of libnotify
 
 import time
+import mkuse.vpp.xlog
 
 #flag -lgio-2.0
 // #include "gio/gnotification.h"
@@ -109,7 +110,7 @@ fn (nty mut Gnotify) clear_expires() {
 		nty.timeoutms = nty.timeoutms
 	}
 	n := nty.nters.len
-	println('totn=$n')
+	xlog.info('totn=$n')
 	nowt := time.now()
 
 	mut news := []u64
@@ -126,7 +127,7 @@ fn (nty mut Gnotify) clear_expires() {
 		olds := nty.nters
 		nty.nters = news
 		deln := olds.len - news.len
-		println('deln=$deln')
+		xlog.info('deln=$deln')
 		olds.free()
 	}else{
 		news.free()

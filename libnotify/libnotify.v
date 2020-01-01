@@ -1,6 +1,7 @@
 module xlibv
 
 import time
+import mkuse.vpp.xlog
 
 #flag -lnotify
 #flag -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/gdk-pixbuf-2.0
@@ -125,7 +126,7 @@ fn (nty mut Notify) clear_expires() {
 		nty.timeoutms = nty.timeoutms
 	}
 	n := nty.nters.len
-	println('totn=$n')
+	xlog.info('totn=$n')
 	nowt := time.now()
 
 	mut news := []u64
@@ -142,7 +143,7 @@ fn (nty mut Notify) clear_expires() {
 		olds := nty.nters
 		nty.nters = news
 		deln := olds.len - news.len
-		println('deln=$deln')
+		xlog.info('deln=$deln')
 		olds.free()
 	}else{
 		news.free()
