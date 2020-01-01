@@ -84,6 +84,9 @@ fn (nty mut Notification) set_timeout(timeoutms int) {
 	C.notify_notification_set_timeout(nty.notion, timeoutms)
 }
 
+// 问题
+// 需要g_main_loop
+// 可能是 相应 fd没有hook到，并且是阻塞的，不能用于corona fiber
 pub struct Notify {
 mut:
 	nters []u64

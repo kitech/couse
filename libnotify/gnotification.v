@@ -17,9 +17,13 @@ fn C.g_notification_set_priority(voidptr, int)
 fn C.g_notification_add_button(voidptr, byteptr, byteptr)
 fn C.g_notification_set_default_action(voidptr, byteptr)
 fn C.g_notification_set_default_action_and_target_value(voidptr, byteptr, byteptr)
+fn C.g_application_new() voidptr
+fn C.g_application_register() bool
+fn C.g_application_send_notification()
 
 struct Gnotification {
 mut:
+	gapp voidptr
 	notion voidptr
 	ctime time.Time
 	timeoutms int
@@ -28,9 +32,11 @@ mut:
 	icon string
 	urgent bool
 }
-fn new_gnotification() &Gnotification{
+fn new_gnotification(gapp voidptr) &Gnotification{
 	mut nter := &Gnotification{}
+	nter.gapp = gapp
 	nter.ctime = time.now()
+	nter.notion = C.g_notification_new('toast'.str)
 	return nter
 }
 fn (nter mut Gnotification) set_timeout(timeoutms int) {
@@ -38,9 +44,11 @@ fn (nter mut Gnotification) set_timeout(timeoutms int) {
 }
 fn (nter mut Gnotification) set_title(title string) {
 	nter.title = title
+	C.g_notification_set_title(nter.notion, title.str)
 }
 fn (nter mut Gnotification) set_body(body string) {
 	nter.body = body
+	C.g_notification_set_body(nter.notion, body.str)
 }
 fn (nter mut Gnotification) set_icon(icon string) {
 	nter.icon = icon
@@ -48,9 +56,16 @@ fn (nter mut Gnotification) set_icon(icon string) {
 fn (nter mut Gnotification) close() {
 	nter.notion = 0
 }
+fn (nter mut Gnotification) show() {
+	C.g_application_send_notification(nter.gapp, 0, nter.notion)
+}
 
+// 问题
+// 需要g_main_loop
+// 可能是 相应 fd没有hook到，并且是阻塞的，不能用于corona fiber
 pub struct Gnotify {
 mut:
+	gapp voidptr
 	nters []u64
 	timeoutms int
 }
@@ -58,16 +73,19 @@ mut:
 pub fn newgnotify(timeoutms int) &Gnotify {
 	mut nty := &Gnotify{}
 	nty.timeoutms = timeoutms
+	nty.gapp = C.g_application_new(0, 0)
+	bv := C.g_application_register(nty.gapp, 0, 0)
 	return nty
 }
 
 pub fn (nty mut Gnotify) add(summary string, body string, icon string, timeoutms int) {
-	mut nter := new_gnotification()
+	mut nter := new_gnotification(nty.gapp)
 	nty.nters << u64(nter)
 	nter.set_timeout(timeoutms)
 	nter.set_title(summary)
 	nter.set_body(body)
 	nter.set_icon(icon)
+	nter.show()
 
 	nty.clear_expires()
 }
