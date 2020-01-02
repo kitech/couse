@@ -116,7 +116,7 @@ fn (nty mut Gnotify) clear_expires() {
 	mut news := []u64
 	for nterx in nty.nters {
 		mut nter := (*Gnotification)(nterx)
-		if nowt.uni - nter.ctime.uni > 2*nter.timeoutms/1000 {
+		if nowt.unix - nter.ctime.unix > 2*nter.timeoutms/1000 {
 			nter.close()
 			free(nter)
 		}else{

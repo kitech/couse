@@ -132,7 +132,7 @@ fn (nty mut Notify) clear_expires() {
 	mut news := []u64
 	for nterx in nty.nters {
 		mut nter := (*Notification)(nterx)
-		if nowt.uni - nter.ctime.uni > 2*nter.timeout/1000 {
+		if nowt.unix - nter.ctime.unix > 2*nter.timeout/1000 {
 			nter.close()
 			free(nter)
 		}else{
