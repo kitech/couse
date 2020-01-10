@@ -31,8 +31,12 @@ const (
 	EV_HTTP_REPLY = C.MG_EV_HTTP_REPLY
 )
 
+[typedef] // nothing happend
 struct C.mbuf {
 }
+
+// type mg_connection1 C.mg_connection
+[typedef]
 struct C.mg_connection {
 	recv_mbuf C.mbuf
 	send_mbuf C.mbuf
