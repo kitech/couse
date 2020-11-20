@@ -14,8 +14,8 @@ fn C.notify_is_initted() byte
 fn C.notify_get_app_name() byteptr
 fn C.notify_set_app_name(byteptr)
 fn C.notify_get_server_caps() voidptr
-fn C.notify_get_server_info(ret_name *byteptr, ret_vendor *byteptr,
-	ret_version *byteptr, ret_spec_version *byteptr) byte
+fn C.notify_get_server_info(ret_name &byteptr, ret_vendor &byteptr,
+	ret_version &byteptr, ret_spec_version &byteptr) byte
 
 
 fn C.notify_notification_get_type() int
@@ -115,7 +115,8 @@ pub fn (nty mut Notify) replace(summary string, body string, icon string, timeou
 		return
 	}
 	nterx := nty.nters[nty.nters.len-1]
-	nter := (*Notification)(nterx)
+	mut nter := &Notification{}
+    nter = (nterx)
 	nter.update(summary, body, icon)
 	nter.show()
 	nty.clear_expires()
@@ -131,7 +132,8 @@ fn (nty mut Notify) clear_expires() {
 
 	mut news := []u64
 	for nterx in nty.nters {
-		mut nter := (*Notification)(nterx)
+		mut nter := &Notification{}
+        nter = (nterx)
 		if nowt.unix - nter.ctime.unix > 2*nter.timeout/1000 {
 			nter.close()
 			free(nter)

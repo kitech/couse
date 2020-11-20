@@ -97,7 +97,8 @@ pub fn (nty mut Gnotify) replace(summary string, body string, icon string, timeo
 		return
 	}
 	nterx := nty.nters[nty.nters.len-1]
-	mut nter := (*Gnotification)(nterx)
+	mut nter := &Gnotification{}
+    nter = (nterx)
 	nter.set_title(summary)
 	nter.set_body(body)
 	nter.set_icon(icon)
@@ -115,7 +116,8 @@ fn (nty mut Gnotify) clear_expires() {
 
 	mut news := []u64
 	for nterx in nty.nters {
-		mut nter := (*Gnotification)(nterx)
+		mut nter := &Gnotification{}
+        nter = (nterx)
 		if nowt.unix - nter.ctime.unix > 2*nter.timeoutms/1000 {
 			nter.close()
 			free(nter)
