@@ -33,11 +33,13 @@ mut:
 	icon string
 	urgent bool
 }
+fn gnotification_fromptr(ptr voidptr) &Gnotification{ return ptr }
 fn new_gnotification(gapp voidptr) &Gnotification{
 	mut nter := &Gnotification{}
 	nter.gapp = gapp
 	nter.ctime = time.now()
-	nter.notion = C.g_notification_new('toast'.str)
+    str1 := 'toast'
+	nter.notion = C.g_notification_new(str1.str)
 	return nter
 }
 fn (nter mut Gnotification) set_timeout(timeoutms int) {
@@ -97,8 +99,7 @@ pub fn (nty mut Gnotify) replace(summary string, body string, icon string, timeo
 		return
 	}
 	nterx := nty.nters[nty.nters.len-1]
-	mut nter := &Gnotification{}
-    nter = (nterx)
+	mut nter := gnotification_fromptr (nterx)
 	nter.set_title(summary)
 	nter.set_body(body)
 	nter.set_icon(icon)
@@ -114,10 +115,9 @@ fn (nty mut Gnotify) clear_expires() {
 	xlog.info('totn=$n')
 	nowt := time.now()
 
-	mut news := []u64
+	mut news := []u64{}
 	for nterx in nty.nters {
-		mut nter := &Gnotification{}
-        nter = (nterx)
+        mut nter := gnotification_fromptr (nterx)
 		if nowt.unix - nter.ctime.unix > 2*nter.timeoutms/1000 {
 			nter.close()
 			free(nter)

@@ -10,7 +10,7 @@ import mkuse.vpp.xlog
 
 fn C.notify_init(app_name byteptr) byte
 fn C.notify_uninit()
-fn C.notify_is_initted() byte
+fn C.notify_is_initted() bool
 fn C.notify_get_app_name() byteptr
 fn C.notify_set_app_name(byteptr)
 fn C.notify_get_server_caps() voidptr
@@ -36,7 +36,7 @@ fn C.notify_notification_get_closed_reason()
 
 fn notify_init(appname string) bool { return C.notify_init(appname.str) == 1 }
 fn notify_uninit() { C.notify_uninit() }
-fn notify_is_initted() bool { return C.notify_is_initted() == 1 }
+fn notify_is_initted() bool { return C.notify_is_initted() == true }
 
 /*
 usage:
@@ -51,9 +51,10 @@ mut:
 	timeout int
 	ctime time.Time
 }
+fn notification_fromptr(ptr voidptr) &Notification{ return ptr }
 
 fn newnotification() &Notification {
-	if notify_is_initted() == 0 { notify_init('xlibvn'.str) }
+	if notify_is_initted() == false { notify_init('xlibvn') }
 
 	mut nty := &Notification{}
 	nty.ctime = time.now()
@@ -115,8 +116,7 @@ pub fn (nty mut Notify) replace(summary string, body string, icon string, timeou
 		return
 	}
 	nterx := nty.nters[nty.nters.len-1]
-	mut nter := &Notification{}
-    nter = (nterx)
+	mut nter := notification_fromptr(nterx)
 	nter.update(summary, body, icon)
 	nter.show()
 	nty.clear_expires()
@@ -130,10 +130,9 @@ fn (nty mut Notify) clear_expires() {
 	xlog.info('totn=$n')
 	nowt := time.now()
 
-	mut news := []u64
+	mut news := []u64{}
 	for nterx in nty.nters {
-		mut nter := &Notification{}
-        nter = (nterx)
+        mut nter := notification_fromptr(nterx)
 		if nowt.unix - nter.ctime.unix > 2*nter.timeout/1000 {
 			nter.close()
 			free(nter)
