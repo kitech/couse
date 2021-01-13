@@ -51,7 +51,9 @@ mut:
 	timeout int
 	ctime time.Time
 }
-fn notification_fromptr(ptr voidptr) &Notification{ return ptr }
+fn notification_fromptr(ptr voidptr) &Notification{
+    return &Notification(ptr)
+}
 
 fn newnotification() &Notification {
 	if notify_is_initted() == false { notify_init('xlibvn') }
@@ -68,7 +70,7 @@ fn newnotification() &Notification {
 }
 fn (nty mut Notification) close() bool {
 	rv := C.notify_notification_close(nty.notion, 0)
-	nty.notion = 0
+	nty.notion = vnil
 	return rv == 1
 }
 

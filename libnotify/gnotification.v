@@ -33,7 +33,9 @@ mut:
 	icon string
 	urgent bool
 }
-fn gnotification_fromptr(ptr voidptr) &Gnotification{ return ptr }
+fn gnotification_fromptr(ptr voidptr) &Gnotification{
+    return &Gnotification(ptr)
+}
 fn new_gnotification(gapp voidptr) &Gnotification{
 	mut nter := &Gnotification{}
 	nter.gapp = gapp
@@ -57,7 +59,7 @@ fn (nter mut Gnotification) set_icon(icon string) {
 	nter.icon = icon
 }
 fn (nter mut Gnotification) close() {
-	nter.notion = 0
+	nter.notion = vnil
 }
 fn (nter mut Gnotification) show() {
 	C.g_application_send_notification(nter.gapp, 0, nter.notion)
