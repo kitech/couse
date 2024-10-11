@@ -1,39 +1,41 @@
 module ffi
 
 #flag -lffi
-#flag -I@VROOT/
+// #flag -I@VMODROOT/
+#flag darwin -I/nix/store/f6z7lsax5dzdn60m1xsxsm9l0hlcmjkq-libffi-3.4.6-dev/include/
 // #flag @VROOT/ffiv.o
-#include "ffiv.h"
+// #include "ffiv.h"
+#include "ffi.h"
 
 pub const (
-    DEFAULT_ABI = C.FFI_DEFAULT_ABI
+	default_abi = C.FFI_DEFAULT_ABI
 )
 pub const (
-    OK = C.FFI_OK
-    BAD_TYPEDEF = C.FFI_BAD_TYPEDEF
-    BAD_ABI = C.FFI_BAD_ABI
+	ok = C.FFI_OK
+    bad_typedef = C.FFI_BAD_TYPEDEF
+    bad_abi = C.FFI_BAD_ABI
 )
 pub const (
-    TYPE_VOID       = C.FFI_TYPE_VOID
-    TYPE_INT        = C.FFI_TYPE_INT
-    TYPE_FLOAT      = C.FFI_TYPE_FLOAT
-    TYPE_DOUBLE     = C.FFI_TYPE_DOUBLE
+    ctype_void       = C.FFI_TYPE_VOID
+    ctype_int        = C.FFI_TYPE_INT
+    ctype_float      = C.FFI_TYPE_FLOAT
+    ctype_double     = C.FFI_TYPE_DOUBLE
     //#if 1               =
-    TYPE_LONGDOUBLE = C.FFI_TYPE_LONGDOUBLE
+    ctype_longdouble = C.FFI_TYPE_LONGDOUBLE
     //#else               =
     //FFI_TYPE_LONGDOUBLE = FFI_TYPE_DOUBLE
     //#endif              =
-    TYPE_UINT8      = C.FFI_TYPE_UINT8
-    TYPE_SINT8      = C.FFI_TYPE_SINT8
-    TYPE_UINT16     = C.FFI_TYPE_UINT16
-    TYPE_SINT16     = C.FFI_TYPE_SINT16
-    TYPE_UINT32     = C.FFI_TYPE_UINT32
-    TYPE_SINT32     = C.FFI_TYPE_SINT32
-    TYPE_UINT64     = C.FFI_TYPE_UINT64
-    TYPE_SINT64     = C.FFI_TYPE_SINT64
-    TYPE_STRUCT     = C.FFI_TYPE_STRUCT
-    TYPE_POINTER    = C.FFI_TYPE_POINTER
-    TYPE_COMPLEX    = C.FFI_TYPE_COMPLEX
+    ctype_uint8      = C.FFI_TYPE_UINT8
+    ctype_sint8      = C.FFI_TYPE_SINT8
+    ctype_uint16     = C.FFI_TYPE_UINT16
+    ctype_sint16     = C.FFI_TYPE_SINT16
+    ctype_uint32     = C.FFI_TYPE_UINT32
+    ctype_sint32     = C.FFI_TYPE_SINT32
+    ctype_uint64     = C.FFI_TYPE_UINT64
+    ctype_sint64     = C.FFI_TYPE_SINT64
+    ctype_struct     = C.FFI_TYPE_STRUCT
+    ctype_pointer    = C.FFI_TYPE_POINTER
+    ctype_complex    = C.FFI_TYPE_COMPLEX
     // FFI_TYPE_LAST       FFI_TYPE_COMPLEX
 )
 
@@ -50,109 +52,53 @@ pub const (
     type_float   = &C.ffi_type_float
     type_double  = &C.ffi_type_double
     type_pointer = &C.ffi_type_pointer
+	type_int = $if x64 || amd64 || arm64 { type_sint64 } $else { type_sint32}
+	type_uint = $if x64 || amd64 || arm64 { type_uint64 } $else { type_uint32}
 )
 
-struct C._ffi_type {
+@[typedef]
+struct C.ffi_type {}
 
-}
-pub type Type = C._ffi_type
-fn C.ffi_get_type_obj() &C._ffi_type
-//[depcreated]
+pub type Type = C.ffi_type
+// pub type Type = voidptr
+fn C.ffi_get_type_obj() &C.ffi_type
+//[deprecated]
 //fn get_type_obj(ty int) &Type { return C.ffi_get_type_obj(ty) }
 pub fn get_type_obj2(ty int) &Type {
-    mut tyobj := &Type{}
-    tyobj = voidptr(0)
-    if ty == TYPE_VOID {
-        tyobj = type_void
-    } else if ty == TYPE_INT {
-        tyobj = type_sint32
-    } else if ty == TYPE_FLOAT {
-        tyobj = type_float
-    } else if ty == TYPE_DOUBLE {
-        tyobj = type_double
-    } else if ty == TYPE_LONGDOUBLE {
-        // tyobj = type_longdouble
-    } else if ty == TYPE_UINT8 {
-        tyobj = type_uint8
-    } else if ty == TYPE_SINT8 {
-        tyobj = type_sint8
-    } else if ty == TYPE_UINT16 {
-        tyobj = type_uint16
-    } else if ty == TYPE_SINT16 {
-        tyobj = type_sint16
-    } else if ty == TYPE_UINT32 {
-        tyobj = type_uint32
-    } else if ty == TYPE_SINT32 {
-        tyobj = type_sint32
-    } else if ty == TYPE_UINT64 {
-        tyobj = type_uint64
-    } else if ty == TYPE_SINT64 {
-        tyobj = type_sint64
-    } else if ty == TYPE_POINTER {
-        tyobj = type_pointer
-    }else {
-        panic("not impled")
-    }
+    // mut tyobj := &Type{}
+	// mut tyobj := &int{}
+	mut tyobj := voidptr(0)
 
     match ty {
-        // TYPE_VOID {}
-        // TYPE_INT {}
-    /* case FFI_TYPE_FLOAT: */
-    /*     tyobj = & ffi_type_float; */
-    /*     break; */
-    /* case FFI_TYPE_DOUBLE: */
-    /*     tyobj = & ffi_type_double; */
-    /*     break; */
-    /* case FFI_TYPE_LONGDOUBLE: */
-    /*     break; */
-    /*     //    case FFI_TYPE_LONGDOUBLE FFI_TYPE_DOUBLE: */
-    /*     // break: */
-    /* case FFI_TYPE_UINT8: */
-    /*     tyobj = &ffi_type_uint8; */
-    /*     break; */
-    /* case FFI_TYPE_SINT8: */
-    /*     tyobj = &ffi_type_sint8; */
-    /*     break; */
-    /* case FFI_TYPE_UINT16: */
-    /*     tyobj = &ffi_type_uint16; */
-    /*     break; */
-    /* case FFI_TYPE_SINT16: */
-    /*     tyobj = &ffi_type_uint16; */
-    /*     break; */
-    /* case FFI_TYPE_UINT32: */
-    /*     tyobj = &ffi_type_uint32; */
-    /*     break; */
-    /* case FFI_TYPE_SINT32: */
-    /*     tyobj = &ffi_type_sint32; */
-    /*     break; */
-    /* case FFI_TYPE_UINT64: */
-    /*     tyobj = &ffi_type_uint64; */
-    /*     break; */
-    /* case FFI_TYPE_SINT64: */
-    /*     tyobj = &ffi_type_sint64; */
-    /*     break; */
-    /* case FFI_TYPE_STRUCT: */
-    /*     break; */
-    /* case FFI_TYPE_POINTER: */
-    /*     break; */
-    /* case FFI_TYPE_COMPLEX: */
-        /*     break; */
-        else {}
-    }
-    return tyobj
+		ctype_void { tyobj = type_void }
+		ctype_int { tyobj = type_sint32 }
+		ctype_sint16 { tyobj = type_sint16 }
+		ctype_uint16 { tyobj = type_uint16 }
+		ctype_sint64 { tyobj = type_sint64 }
+		ctype_uint64 { tyobj = type_uint64 }
+		ctype_float { tyobj = type_float }
+		ctype_double { tyobj = type_double }
+		ctype_pointer { tyobj = type_pointer }
 
+        else { panic("not impled ${ty}") }
+    }
+
+    return tyobj
 }
 
+@[typedef]
 struct C.ffi_cif {}
 pub type Cif = C.ffi_cif
 
-fn C.ffi_prep_cif() int
+fn C.ffi_prep_cif(&Cif, voidptr, int, voidptr, voidptr) int
+
 pub fn prep_cif(cif &Cif, abi int, rtype &Type) int {
     ret := C.ffi_prep_cif(cif, abi, 0, rtype, 0)
     return ret
 }
 
-fn C.ffi_call()
+fn C.ffi_call(&Cif, voidptr, &u64, voidptr)
+
 pub fn call(cif &Cif, f voidptr /*fn()*/) {
     mut rvalue := u64(0)
     mut avalues := voidptr(0)
@@ -185,20 +131,21 @@ pub fn call3(f voidptr, atypes []int, avalues []voidptr) u64 {
 
     // prepare
     cif := Cif{}
-    rv := C.ffi_prep_cif(&cif, DEFAULT_ABI, argc, rtype, atypesc)
+    rv := C.ffi_prep_cif(&cif, ffi.default_abi, argc, rtype, atypesc)
     match rv {
-        // ffi.OK {}
+        ffi.ok {}
         // ffi.BAD_TYPEDEF {}
         //ffi.BAD_ABI {}
         else{}
     }
-    if rv == ffi.OK {
-    } else if rv == ffi.BAD_TYPEDEF {
-    } else if rv == ffi.BAD_ABI {
-    }
+    if rv == ffi.ok {
+    } else if rv == ffi.bad_typedef {
+    } else if rv == ffi.bad_abi {
+    } else {
+	}
 
     // invoke
-    mut avalues2 := avalues
+    mut avalues2 := avalues.clone()
     avaluesc := avalues2.data
     mut rvalue := u64(0)
     C.ffi_call(&cif, f, &rvalue, avaluesc)
