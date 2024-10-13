@@ -1,15 +1,17 @@
 module ffi
 
+// error: Cannot find "libffi" pkgconfig file
+// #pkgconfig libffi
 #flag -lffi
-// #flag -I@VMODROOT/
-#flag darwin -I/nix/store/f6z7lsax5dzdn60m1xsxsm9l0hlcmjkq-libffi-3.4.6-dev/include/
-// #flag @VROOT/ffiv.o
-// #include "ffiv.h"
+#flag -I@VMODROOT/
+#flag @VMODROOT/ffiv.o
+#flag darwin -I/Library/Developer/CommandLineTools/SDKs/MacOSX11.sdk/usr/include/ffi
+// #flag darwin -I/nix/store/f6z7lsax5dzdn60m1xsxsm9l0hlcmjkq-libffi-3.4.6-dev/include/
+#include "ffiv.h"
 #include "ffi.h"
 
-pub const (
-	default_abi = C.FFI_DEFAULT_ABI
-)
+pub const default_abi = C.FFI_DEFAULT_ABI
+
 pub const (
 	ok = C.FFI_OK
     bad_typedef = C.FFI_BAD_TYPEDEF
@@ -39,6 +41,7 @@ pub const (
     // FFI_TYPE_LAST       FFI_TYPE_COMPLEX
 )
 
+// type: &int
 pub const (
     type_void    = &C.ffi_type_void
     type_uint8   = &C.ffi_type_uint8
@@ -61,9 +64,10 @@ struct C.ffi_type {}
 
 pub type Type = C.ffi_type
 // pub type Type = voidptr
-fn C.ffi_get_type_obj() &C.ffi_type
-//[deprecated]
-//fn get_type_obj(ty int) &Type { return C.ffi_get_type_obj(ty) }
+fn C.ffi_get_type_obj(int) &C.ffi_type
+//@[deprecated]
+fn get_type_obj(ty int) voidptr { return voidptr(C.ffi_get_type_obj(ty)) }
+
 pub fn get_type_obj2(ty int) &Type {
     // mut tyobj := &Type{}
 	// mut tyobj := &int{}
@@ -85,14 +89,35 @@ pub fn get_type_obj2(ty int) &Type {
 
     return tyobj
 }
+pub fn get_type_obj3(ty int) voidptr {
+	vx := get_type_obj2(ty)
+	return voidptr(vx)
+}
 
 @[typedef]
-struct C.ffi_cif {}
-pub type Cif = C.ffi_cif
+pub struct C.ffi_cif {}
+
+// pub type Cif = C.ffi_cif
+pub struct Cif {
+	a0 voidptr
+	a1 voidptr
+	a2 voidptr
+	a3 voidptr
+	a4 voidptr
+	a5 voidptr
+	a6 voidptr
+	a7 voidptr
+	a8 voidptr
+	a9 voidptr
+}
 
 fn C.ffi_prep_cif(&Cif, voidptr, int, voidptr, voidptr) int
 
 pub fn prep_cif(cif &Cif, abi int, rtype &Type) int {
+    ret := C.ffi_prep_cif(cif, abi, 0, rtype, 0)
+    return ret
+}
+pub fn prep_cif2(cif &Cif, abi int, rtype &int) int {
     ret := C.ffi_prep_cif(cif, abi, 0, rtype, 0)
     return ret
 }
@@ -103,6 +128,8 @@ pub fn call(cif &Cif, f voidptr /*fn()*/) {
     mut rvalue := u64(0)
     mut avalues := voidptr(0)
     C.ffi_call(cif, f, &rvalue, avalues)
+	// printa(rvalue, tosbca(charptr(rvalue)))
+	tosbca(charptr(rvalue))
 }
 
 pub fn call2(f fn(), args ...voidptr) u64 {

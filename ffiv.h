@@ -107,7 +107,7 @@ typedef struct _ffi_type
   struct _ffi_type **elements;
 } ffi_type;
 
-    ffi_type* ffi_get_type_obj(int);
+ffi_type* ffi_get_type_obj(int);
 
 /* Need minimal decorations for DLLs to work on Windows.  GCC has
    autoimport and autoexport.  Always mark externally visible symbols
