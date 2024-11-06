@@ -4,12 +4,14 @@ import log
 
 // error: Cannot find "libffi" pkgconfig file
 // #pkgconfig libffi
-#flag -lffi
+#flag -DFFI_GO_CLOSURES=1
+// #flag -lffi
+// #flag darwin  -lffi-trampolines //
 #flag -I@VMODROOT/
 #flag @VMODROOT/ffiv.o
 #flag darwin -I/Library/Developer/CommandLineTools/SDKs/MacOSX11.sdk/usr/include/ffi
-// #flag darwin -I/nix/store/f6z7lsax5dzdn60m1xsxsm9l0hlcmjkq-libffi-3.4.6-dev/include/
-#include "ffiv.h"
+#flag darwin -Wl,@VMODROOT/../../.nix-profile/lib/libffi.dylib
+#include "@VMODROOT/ffiv.h"
 #include "ffi.h"
 
 pub const default_abi = C.FFI_DEFAULT_ABI
@@ -21,11 +23,12 @@ pub const bad_abi = C.FFI_BAD_ABI
 pub const ctype_void       = C.FFI_TYPE_VOID
 pub const ctype_int        = C.FFI_TYPE_INT
 pub const ctype_float      = C.FFI_TYPE_FLOAT
-pub const ctype_double     = C.FFI_TYPE_DOUBLE		//#if 1               =
+pub const ctype_double     = C.FFI_TYPE_DOUBLE
+//#if 1               =
 pub const ctype_longdouble = C.FFI_TYPE_LONGDOUBLE
- //#else               =
- //FFI_TYPE_LONGDOUBLE = FFI_TYPE_DOUBLE
- //#endif              =
+//#else               =
+//FFI_TYPE_LONGDOUBLE = FFI_TYPE_DOUBLE
+//#endif              =
 pub const ctype_uint8      = C.FFI_TYPE_UINT8
 pub const ctype_sint8      = C.FFI_TYPE_SINT8
 pub const ctype_uint16     = C.FFI_TYPE_UINT16
@@ -41,7 +44,32 @@ pub const ctype_complex    = C.FFI_TYPE_COMPLEX
 
 
 // type: &int
+// @[c_extern]
+// __global ffi_type_void voidptr
+// @[c_extern]
+// __global ffi_type_uint8 voidptr
+// @[c_extern]
+// __global ffi_type_sint8 voidptr
+// @[c_extern]
+// __global ffi_type_uint16 voidptr
+// @[c_extern]
+// __global ffi_type_sint16 voidptr
+// @[c_extern]
+// __global ffi_type_uint32 voidptr
+// @[c_extern]
+// __global ffi_type_sint32 voidptr
+// @[c_extern]
+// __global ffi_type_uint64 voidptr
+// @[c_extern]
+// __global ffi_type_sint64 voidptr
+// @[c_extern]
+// __global ffi_type_float voidptr
+// @[c_extern]
+// __global ffi_type_double voidptr
+// @[c_extern]
+// __global ffi_type_pointer voidptr
 
+// todo deprecated
 pub const    type_void    = &C.ffi_type_void
 pub const    type_uint8   = &C.ffi_type_uint8
 pub const    type_sint8   = &C.ffi_type_sint8
@@ -63,9 +91,9 @@ struct C.ffi_type {}
 
 pub type Type = C.ffi_type
 // pub type Type = voidptr
-fn C.ffi_get_type_obj(int) &C.ffi_type
+// fn C.ffi_get_type_obj(int) &C.ffi_type
 //@[deprecated]
-fn get_type_obj(ty int) voidptr { return voidptr(C.ffi_get_type_obj(ty)) }
+// fn get_type_obj(ty int) voidptr { return voidptr(C.ffi_get_type_obj(ty)) }
 
 pub fn get_type_obj2(ty int) &Type {
     // mut tyobj := &Type{}
@@ -99,14 +127,6 @@ pub type Cif = C.ffi_cif
 
 fn C.ffi_prep_cif(&Cif, voidptr, int, voidptr, voidptr) int
 
-pub fn prep_cif(cif &Cif, abi int, rtype &Type) int {
-    ret := C.ffi_prep_cif(cif, abi, 0, rtype, 0)
-    return ret
-}
-pub fn prep_cif2(cif &Cif, abi int, rtype &int) int {
-    ret := C.ffi_prep_cif(cif, abi, 0, rtype, 0)
-    return ret
-}
 pub fn prep_cif0(cif &Cif, rtype &int, atypes []&int) int {
 	// log.info("${@LOCATION}, ${rtype}, ${atypes.len}")
     ret := C.ffi_prep_cif(cif, default_abi, atypes.len, rtype, atypes.data)
@@ -121,6 +141,40 @@ pub fn call(cif &Cif, f voidptr /*fn()*/, rvalue voidptr, avalues []voidptr) voi
 	return voidptr(rvalue)
 }
 
+@[typedef]
+pub struct C.ffi_go_closure {}
+pub type Goclos = C.ffi_go_closure
+
+// not exist
+// fun: void (*fun)(ffi_cif*,void*,void**,void*)
+fn C.ffi_prep_go_closure(clos &Goclos, cif &Cif, fun voidptr) int
+// fun void (*fn)(void)
+fn C.ffi_call_go(cif &Cif, fun voidptr, rvalue voidptr, avalues &voidptr, clos &Goclos)
+
+pub fn prep_go_closure(clos &Goclos, cif &Cif, fun voidptr) int {
+	return C.ffi_prep_go_closure(clos, cif, fun)
+}
+pub fn call_go(cif &Cif, fun voidptr, rvalue voidptr, avalues &voidptr, clos &Goclos) {
+	C.ffi_call_go(cif, fun, rvalue, avalues, clos)
+}
+
+// not exist
+fn C.ffi_tramp_is_supported() int
+fn C.ffi_tramp_alloc (flags int)voidptr
+fn C.ffi_tramp_set_parms (tramp voidptr, data voidptr, code voidptr)
+fn C.ffi_tramp_get_addr ( tramp voidptr) voidptr
+fn C.ffi_tramp_free (tramp voidptr)
+
+pub fn tramp_is_supported() bool { return C.ffi_tramp_is_supported() != 0}
+pub fn tramp_alloc(flags int) voidptr { return C.ffi_tramp_alloc(flags) }
+pub fn tramp_set_parms(tramp voidptr, data voidptr, code voidptr) {
+	C.ffi_tramp_set_parms(tramp, data, code)
+}
+pub fn tramp_get_addr(tramp voidptr) voidptr { return C.ffi_tramp_get_addr(tramp)}
+pub fn tramp_free(tramp voidptr) { C.ffi_tramp_free(tramp)}
+
+
+
 fn atypes2obj(atypes []int) []&Type {
     mut res := []&Type{}
     for atype in atypes {
@@ -130,18 +184,46 @@ fn atypes2obj(atypes []int) []&Type {
     return res
 }
 
-fn getarray_elemaddr<T>(val []T, n int) voidptr {
-	return voidptr(usize(val.data)+sizeof(T))
+// for qt.qtrt
+pub fn call3(f voidptr, atypes []int, avalues []voidptr) u64 {
+    assert atypes.len == avalues.len
+
+    argc := atypes.len
+    rtype := type_pointer
+    atypeso := atypes2obj(atypes)
+    atypesc := atypeso.data
+
+    // prepare
+    cif := Cif{}
+    rv := C.ffi_prep_cif(&cif, ffi.default_abi, argc, rtype, atypesc)
+    match rv {
+        ffi.ok {}
+        // ffi.BAD_TYPEDEF {}
+        //ffi.BAD_ABI {}
+        else{}
+    }
+    if rv == ffi.ok {
+    } else if rv == ffi.bad_typedef {
+    } else if rv == ffi.bad_abi {
+    } else {
+	}
+    // invoke
+    mut avalues2 := avalues.clone()
+    avaluesc := avalues2.data
+    mut rvalue := u64(0)
+    C.ffi_call(&cif, f, &rvalue, avaluesc)
+    return rvalue
 }
 
 pub fn callfca6<T>(sym voidptr, args...Any) T {
-	mut argctys := [9]int{}
-	mut argotys := [9]&int{}
-	mut argvals := [9]voidptr{}
+	// const array must unsafe, it's compiler's fault
+	mut argctys := unsafe {[9]int{}}
+	mut argotys := unsafe{[9]&int{}}
+	mut argvals := unsafe{[9]voidptr{}}
 
 	for i, arg in args {
 		mut fficty := 0
-		mut ffioty := unsafe{&int(vnil)}
+		mut ffioty := nilof<int>()
 		mut argadr := vnil
 
 		match arg {
