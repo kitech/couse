@@ -3,8 +3,9 @@ module ffi
 import log
 
 // error: Cannot find "libffi" pkgconfig file
-// #pkgconfig libffi
+// #pkgconfig linux libffi
 #flag -DFFI_GO_CLOSURES=1
+#flag linux -lffi
 // #flag -lffi
 // #flag darwin  -lffi-trampolines //
 #flag -I@VMODROOT/
@@ -165,13 +166,13 @@ fn C.ffi_tramp_set_parms (tramp voidptr, data voidptr, code voidptr)
 fn C.ffi_tramp_get_addr ( tramp voidptr) voidptr
 fn C.ffi_tramp_free (tramp voidptr)
 
-pub fn tramp_is_supported() bool { return C.ffi_tramp_is_supported() != 0}
-pub fn tramp_alloc(flags int) voidptr { return C.ffi_tramp_alloc(flags) }
-pub fn tramp_set_parms(tramp voidptr, data voidptr, code voidptr) {
-	C.ffi_tramp_set_parms(tramp, data, code)
-}
-pub fn tramp_get_addr(tramp voidptr) voidptr { return C.ffi_tramp_get_addr(tramp)}
-pub fn tramp_free(tramp voidptr) { C.ffi_tramp_free(tramp)}
+// pub fn tramp_is_supported() bool { return C.ffi_tramp_is_supported() != 0}
+// pub fn tramp_alloc(flags int) voidptr { return C.ffi_tramp_alloc(flags) }
+// pub fn tramp_set_parms(tramp voidptr, data voidptr, code voidptr) {
+// 	C.ffi_tramp_set_parms(tramp, data, code)
+// }
+// pub fn tramp_get_addr(tramp voidptr) voidptr { return C.ffi_tramp_get_addr(tramp)}
+// pub fn tramp_free(tramp voidptr) { C.ffi_tramp_free(tramp)}
 
 
 
@@ -316,4 +317,3 @@ pub fn callfca6<T>(sym voidptr, args...Any) T {
 	}
 	return T{}
 }
-
