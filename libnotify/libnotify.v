@@ -1,7 +1,8 @@
 module xlibv
 
 import time
-import mkuse.vpp.xlog
+// import mkuse.vpp.xlog
+import vcp
 
 #flag -lnotify
 #flag -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/gdk-pixbuf-2.0
@@ -20,9 +21,9 @@ fn C.notify_get_server_info(ret_name &byteptr, ret_vendor &byteptr,
 
 fn C.notify_notification_get_type() int
 fn C.notify_notification_new(summary byteptr, body byteptr, icon byteptr) voidptr
-fn C.notify_notification_update() byte
-fn C.notify_notification_show() byte
-fn C.notify_notification_set_timeout()
+fn C.notify_notification_update(... voidptr) byte
+fn C.notify_notification_show(... voidptr) byte
+fn C.notify_notification_set_timeout(... voidptr)
 fn C.notify_notification_set_category()
 fn C.notify_notification_set_urgency()
 fn C.notify_notification_set_image_from_pixbuf()
@@ -52,7 +53,7 @@ mut:
 	ctime time.Time
 }
 fn notification_fromptr(ptr voidptr) &Notification{
-    return &Notification(ptr)
+    return unsafe {&Notification(ptr)}
 }
 
 fn newnotification() &Notification {
@@ -129,13 +130,13 @@ fn (nty mut Notify) clear_expires() {
 		nty.timeoutms = nty.timeoutms
 	}
 	n := nty.nters.len
-	xlog.info('totn=$n')
+	vcp.info('totn=$n')
 	nowt := time.now()
 
 	mut news := []u64{}
 	for nterx in nty.nters {
         mut nter := notification_fromptr(nterx)
-		if nowt.unix - nter.ctime.unix > 2*nter.timeout/1000 {
+		if nowt.unix() - nter.ctime.unix() > 2*nter.timeout/1000 {
 			nter.close()
 			free(nter)
 		}else{
@@ -146,7 +147,7 @@ fn (nty mut Notify) clear_expires() {
 		olds := nty.nters
 		nty.nters = news
 		deln := olds.len - news.len
-		xlog.info('deln=$deln')
+		vcp.info('deln=$deln')
 		olds.free()
 	}else{
 		news.free()

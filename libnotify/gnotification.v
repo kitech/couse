@@ -3,7 +3,8 @@ module xlibv
 // seems gnotification is successor of libnotify
 
 import time
-import mkuse.vpp.xlog
+// import mkuse.vpp.xlog
+import vcp
 
 #flag -lgio-2.0
 // #include "gio/gnotification.h"
@@ -18,9 +19,9 @@ fn C.g_notification_set_priority(voidptr, int)
 fn C.g_notification_add_button(voidptr, byteptr, byteptr)
 fn C.g_notification_set_default_action(voidptr, byteptr)
 fn C.g_notification_set_default_action_and_target_value(voidptr, byteptr, byteptr)
-fn C.g_application_new() voidptr
-fn C.g_application_register() bool
-fn C.g_application_send_notification()
+fn C.g_application_new(... voidptr) voidptr
+fn C.g_application_register(... voidptr) bool
+fn C.g_application_send_notification(... voidptr)
 
 struct Gnotification {
 mut:
@@ -34,7 +35,7 @@ mut:
 	urgent bool
 }
 fn gnotification_fromptr(ptr voidptr) &Gnotification{
-    return &Gnotification(ptr)
+    return unsafe {&Gnotification(ptr)}
 }
 fn new_gnotification(gapp voidptr) &Gnotification{
 	mut nter := &Gnotification{}
@@ -114,13 +115,13 @@ fn (nty mut Gnotify) clear_expires() {
 		nty.timeoutms = nty.timeoutms
 	}
 	n := nty.nters.len
-	xlog.info('totn=$n')
+	vcp.info('totn=$n')
 	nowt := time.now()
 
 	mut news := []u64{}
 	for nterx in nty.nters {
         mut nter := gnotification_fromptr (nterx)
-		if nowt.unix - nter.ctime.unix > 2*nter.timeoutms/1000 {
+		if nowt.unix() - nter.ctime.unix() > 2*nter.timeoutms/1000 {
 			nter.close()
 			free(nter)
 		}else{
@@ -131,7 +132,7 @@ fn (nty mut Gnotify) clear_expires() {
 		olds := nty.nters
 		nty.nters = news
 		deln := olds.len - news.len
-		xlog.info('deln=$deln')
+		vcp.info('deln=$deln')
 		olds.free()
 	}else{
 		news.free()
