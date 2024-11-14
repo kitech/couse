@@ -20,6 +20,10 @@ fn C.mpv_event_name(cint) charptr
 fn C.mpv_wait_event(voidptr, f64) voidptr
 fn C.mpv_wakeup(voidptr) 
 fn C.mpv_set_wakeup_callback(voidptr, voidptr, voidptr)
+// fn C.mpv_request_event(mpv_handle *ctx, mpv_event_id event, int enable)
+fn C.mpv_request_event(... voidptr) cint
+// MPV_EXPORT int mpv_request_log_messages(mpv_handle *ctx, const char *min_level);
+fn C.mpv_request_log_messages(... voidptr) cint
 
 fn init() {
 	vo := Event{}
@@ -40,6 +44,18 @@ pub mut:
     // int error;
     // uint64_t reply_userdata;
     // void *data;
+}
+
+pub struct EventLogMessage {
+	pub:
+	prefix charptr
+	level charptr
+	text charptr
+	log_level cint
+    // const char *prefix;
+    // const char *level;
+    // const char *text;
+    // mpv_log_level log_level;
 }
 
 // some options
