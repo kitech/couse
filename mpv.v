@@ -24,6 +24,7 @@ fn C.mpv_set_wakeup_callback(voidptr, voidptr, voidptr)
 fn C.mpv_request_event(... voidptr) cint
 // MPV_EXPORT int mpv_request_log_messages(mpv_handle *ctx, const char *min_level);
 fn C.mpv_request_log_messages(... voidptr) cint
+fn C.mpv_event_name(cint) charptr
 
 fn init() {
 	vo := Event{}
@@ -56,6 +57,21 @@ pub struct EventLogMessage {
     // const char *level;
     // const char *text;
     // mpv_log_level log_level;
+}
+
+pub union NodeValue {
+		str charptr
+		flag cint
+		i64val i64
+		f64val f64
+		list voidptr
+		ba voidptr
+}
+
+pub struct Node {
+	pub:
+	u NodeValue
+	format cint
 }
 
 // some options
