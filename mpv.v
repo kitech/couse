@@ -20,6 +20,14 @@ fn C.mpv_wait_event(voidptr, f64) voidptr
 fn C.mpv_wakeup(voidptr) 
 fn C.mpv_set_wakeup_callback(voidptr, voidptr, voidptr)
 
+fn init() {
+	vo := Event{}
+	co := C.mpv_event{}
+	assert sizeof(vo)==sizeof(co), "C/V struct size not match"
+}
+
+@[typedef]
+struct C.mpv_event{}
 
 pub struct Event {
 pub mut:
