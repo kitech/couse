@@ -11,6 +11,7 @@ fn C.mpv_create() voidptr
 fn C.mpv_initialize(voidptr) cint
 fn C.mpv_destroy(voidptr)
 fn C.mpv_terminate_destroy(voidptr)
+fn C.mpv_create_client(voidptr, charptr) voidptr
 fn C.mpv_set_option(voidptr, charptr, cint, voidptr) cint
 fn C.mpv_set_option_string(voidptr, charptr, voidptr) cint
 fn C.mpv_command(voidptr, &charptr) cint
@@ -24,7 +25,8 @@ fn C.mpv_set_wakeup_callback(voidptr, voidptr, voidptr)
 fn C.mpv_request_event(... voidptr) cint
 // MPV_EXPORT int mpv_request_log_messages(mpv_handle *ctx, const char *min_level);
 fn C.mpv_request_log_messages(... voidptr) cint
-fn C.mpv_event_name(cint) charptr
+fn C.mpv_client_name(voidptr) charptr
+fn C.mpv_client_id(voidptr) i64
 
 fn init() {
 	vo := Event{}
