@@ -30,6 +30,8 @@ fn init() {
 	vo := Event{}
 	co := C.mpv_event{}
 	assert sizeof(vo)==sizeof(co), "C/V struct size not match"
+	assert sizeofx[Event]()==sizeof[C.mpv_event](), "C/V struct size not match"
+
 }
 
 @[typedef]
