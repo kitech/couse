@@ -19,65 +19,86 @@ fn C.mpv_command_string(voidptr, charptr) cint
 fn C.mpv_command_async(voidptr, u64, &charptr) cint
 fn C.mpv_event_name(cint) charptr
 fn C.mpv_wait_event(voidptr, f64) voidptr
-fn C.mpv_wakeup(voidptr) 
+fn C.mpv_wakeup(voidptr)
 fn C.mpv_set_wakeup_callback(voidptr, voidptr, voidptr)
+
 // fn C.mpv_request_event(mpv_handle *ctx, mpv_event_id event, int enable)
-fn C.mpv_request_event(... voidptr) cint
+fn C.mpv_request_event(...voidptr) cint
+
 // MPV_EXPORT int mpv_request_log_messages(mpv_handle *ctx, const char *min_level);
-fn C.mpv_request_log_messages(... voidptr) cint
+fn C.mpv_request_log_messages(...voidptr) cint
 fn C.mpv_client_name(voidptr) charptr
 fn C.mpv_client_id(voidptr) i64
 
 fn init() {
 	vo := Event{}
 	co := C.mpv_event{}
-	assert sizeof(vo)==sizeof(co), "C/V struct size not match"
-	assert sizeofx[Event]()==sizeof[C.mpv_event](), "C/V struct size not match"
-
+	assert sizeof(vo) == sizeof(co), 'C/V struct size not match'
+	assert sizeofx[Event]() == sizeof[C.mpv_event](), 'C/V struct size not match'
 }
 
 @[typedef]
-struct C.mpv_event{}
+struct C.mpv_event {}
 
 pub struct Event {
 pub mut:
-	event_id cint
-	error cint
+	event_id       cint
+	error          cint
 	reply_userdata u64
-	data voidptr
-    // mpv_event_id event_id;
-    // int error;
-    // uint64_t reply_userdata;
-    // void *data;
+	data           voidptr
+	// mpv_event_id event_id;
+	// int error;
+	// uint64_t reply_userdata;
+	// void *data;
 }
 
 pub struct EventLogMessage {
-	pub:
-	prefix charptr
-	level charptr
-	text charptr
+pub:
+	prefix    charptr
+	level     charptr
+	text      charptr
 	log_level cint
-    // const char *prefix;
-    // const char *level;
-    // const char *text;
-    // mpv_log_level log_level;
+	// const char *prefix;
+	// const char *level;
+	// const char *text;
+	// mpv_log_level log_level;
 }
 
 pub union NodeValue {
-		str charptr
-		flag cint
-		i64val i64
-		f64val f64
-		list voidptr
-		ba voidptr
+	str    charptr
+	flag   cint
+	i64val i64
+	f64val f64
+	list   voidptr
+	ba     voidptr
 }
 
 pub struct Node {
-	pub:
-	u NodeValue
+pub:
+	u      NodeValue
 	format cint
 }
 
+pub const EVENT_ONE = int(C.MPV_EVENT_NONE)  // = 0
+pub const EVENT_SHUTDOWN = int(C.MPV_EVENT_SHUTDOWN)  //          = 1,
+pub const EVENT_LOG_MESSAGE = int(C.MPV_EVENT_LOG_MESSAGE)  //       = 2,
+pub const EVENT_GET_PROPERTY_REPLY = int(C.MPV_EVENT_GET_PROPERTY_REPLY)  // = 3,
+pub const EVENT_SET_PROPERTY_REPLY = int(C.MPV_EVENT_SET_PROPERTY_REPLY)  //  = 4,
+pub const EVENT_COMMAND_REPLAY = int(C.MPV_EVENT_COMMAND_REPLY)  //   = 5,
+pub const EVENT_START_FILE = int(C.MPV_EVENT_START_FILE)  //   = 6,
+pub const EVENT_END_FILE = int(C.MPV_EVENT_END_FILE)  //   = 7,
+pub const EVENT_FILE_LOADED = int(C.MPV_EVENT_FILE_LOADED)  //   = 8,
+pub const EVENT_IDLE = int(C.MPV_EVENT_IDLE)  //   = 11,
+pub const EVENT_TICK = int(C.MPV_EVENT_TICK)  //   = 14,
+pub const EVENT_CLIENT_MESSAGE = int(C.MPV_EVENT_CLIENT_MESSAGE)  //   = 16,
+pub const EVENT_VIDEO_RECONFIG = int(C.MPV_EVENT_VIDEO_RECONFIG)  //   = 17,
+pub const EVENT_AUDIO_RECONFIG = int(C.MPV_EVENT_AUDIO_RECONFIG)  //   = 18,
+pub const EVENT_SEEK = int(C.MPV_EVENT_SEEK)  //   = 20,
+pub const EVENT_PLAYBACK_RESTART = int(C.MPV_EVENT_PLAYBACK_RESTART)  //   = 21,
+pub const EVENT_PROPERTY_CHANGE = int(C.MPV_EVENT_PROPERTY_CHANGE)  //   = 22,
+pub const EVENT_QUEUE_OVERFLOW = int(C.MPV_EVENT_QUEUE_OVERFLOW)  //   = 24,
+pub const EVENT_HOOK = int(C.MPV_EVENT_HOOK)  //   = 25,
+
 // some options
 // --player-operation-mode=pseudo-gui cmdline show window, or pure command line output
-//
+// --keep-open=yes --keep-open-pause=false
