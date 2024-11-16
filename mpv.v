@@ -16,6 +16,11 @@ pub fn command_async(h voidptr, cmdno u64, args ...string) int {
 	return rv
 }
 
+pub fn wait_event(h voidptr, timeo f64) &Event {
+	rv := C.mpv_wait_event(h, timeo)
+	return rv
+}
+
 pub fn event_name0(evid cint) charptr {
 	return C.mpv_event_name(evid)
 }
@@ -139,12 +144,16 @@ fn init() {
 	assert sizeofx[Event]() == sizeof[C.mpv_event](), 'C/V struct size not match'
 }
 
+// pub fn (me &Event) clone_deep() &Event {
+// }
+
 @[typedef]
 struct C.mpv_event {}
 
 pub struct Event {
 pub mut:
-	event_id       cint
+	// event_id       cint
+	event_id      Eventy
 	error          cint
 	reply_userdata u64
 	data           voidptr
