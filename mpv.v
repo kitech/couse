@@ -16,6 +16,14 @@ pub fn command_async(h voidptr, cmdno u64, args ...string) int {
 	return rv
 }
 
+pub fn event_name0(evid cint) charptr {
+	return C.mpv_event_name(evid)
+}
+
+pub fn event_name(evid cint) string {
+	return tosbca(C.mpv_event_name(evid))
+}
+
 pub fn set_property_string(h voidptr, name string, data string) int {
 	vcp.info(h, name, data)
 	rv := C.mpv_set_property_string(h, name.str, data.str)
@@ -45,30 +53,48 @@ pub fn set_property(h voidptr, name string, valx Anyer) int {
 pub fn get_property[T](h voidptr, name string) T {
 	mut fmt := format_none
 	$if T is bool {
-			fmt = format_flag
+		fmt = format_flag
+	} $else $if T is string {
+		fmt = format_string
+		// data = derefvar[string](val.ptr).str
+		if true {
+			// zval := [128]i8{}
+			zval := charptr(0)
+			rv := C.mpv_get_property(h, name.str, fmt, &zval)
+			s := tosbca(charptr(zval)).clone()
+			// vcp.info(name, s)
+			C.mpv_free(zval)
+			return s
 		}
-	$else $if T is string {
-			fmt = format_string
-			// data = derefvar[string](val.ptr).str
-			if true {
-				// zval := [128]i8{}
-				zval := charptr(0)
-				rv := C.mpv_get_property(h, name.str, fmt, &zval)
-				s := tosbca(charptr(zval)).clone()
-				// vcp.info(name, s)
-				C.mpv_free(zval)
-				return s
-			}
-		}
-	$else $if T is i64 {
-			fmt = format_int64
-		}
-	$else {
-			vcp.info('nocat', h, name)
+	} $else $if T is i64 {
+		fmt = format_int64
+	} $else {
+		vcp.info('nocat', h, name)
 	}
 	zval := zeroof[T]()
 	rv := C.mpv_get_property(h, name.str, fmt, &zval)
 	return zval
+}
+
+pub fn propfmt_fromtmpl[T]() cint {
+	mut fmt := format_none
+	$if T is bool {
+		fmt = format_flag
+	} $else $if T is string {
+		fmt = format_string
+		// data = derefvar[string](val.ptr).str
+	} $else $if T is i64 {
+		fmt = format_int64
+	} $else {
+		vcp.info('nocat', h, name)
+	}
+	return fmt
+}
+
+pub fn observe_property[T](h voidptr, name string) int {
+	fmt := propfmt_fromtmpl[T]()
+	rv := C.mpv_observe_property(h, 12345, name.str, fmt)
+	return rv
 }
 
 //////////
@@ -96,8 +122,10 @@ fn C.mpv_request_event(...voidptr) cint
 
 fn C.mpv_set_property(...voidptr) cint
 fn C.mpv_set_property_string(...voidptr) cint
-fn C.mpv_get_property(... voidptr) cint
-fn C.mpv_get_property_string(... voidptr) charptr
+fn C.mpv_get_property(...voidptr) cint
+fn C.mpv_get_property_string(...voidptr) charptr
+fn C.mpv_observe_property(...voidptr) cint
+fn C.mpv_unobserve_property(...voidptr) cint
 
 // MPV_EXPORT int mpv_request_log_messages(mpv_handle *ctx, const char *min_level);
 fn C.mpv_request_log_messages(...voidptr) cint
@@ -153,7 +181,30 @@ pub:
 	format cint
 }
 
-pub const EVENT_ONE = int(C.MPV_EVENT_NONE) // = 0
+pub enum Eventy {
+	// none = int(C.MPV_EVENT_NONE)	
+	NONE               = int(C.MPV_EVENT_NONE)               // = 0
+	SHUTDOWN           = int(C.MPV_EVENT_SHUTDOWN)           //          = 1,
+	LOG_MESSAGE        = int(C.MPV_EVENT_LOG_MESSAGE)        //       = 2,
+	GET_PROPERTY_REPLY = int(C.MPV_EVENT_GET_PROPERTY_REPLY) // = 3,
+	SET_PROPERTY_REPLY = int(C.MPV_EVENT_SET_PROPERTY_REPLY) //  = 4,
+	COMMAND_REPLAY     = int(C.MPV_EVENT_COMMAND_REPLY)      //   = 5,
+	START_FILE         = int(C.MPV_EVENT_START_FILE)         //   = 6,
+	END_FILE           = int(C.MPV_EVENT_END_FILE)           //   = 7,
+	FILE_LOADED        = int(C.MPV_EVENT_FILE_LOADED)        //   = 8,
+	IDLE               = int(C.MPV_EVENT_IDLE)               //   = 11,
+	TICK               = int(C.MPV_EVENT_TICK)               //   = 14,
+	CLIENT_MESSAGE     = int(C.MPV_EVENT_CLIENT_MESSAGE)     //   = 16,
+	VIDEO_RECONFIG     = int(C.MPV_EVENT_VIDEO_RECONFIG)     //   = 17,
+	AUDIO_RECONFIG     = int(C.MPV_EVENT_AUDIO_RECONFIG)     //   = 18,
+	SEEK               = int(C.MPV_EVENT_SEEK)               //   = 20,
+	PLAYBACK_RESTART   = int(C.MPV_EVENT_PLAYBACK_RESTART)   //   = 21,
+	PROPERTY_CHANGE    = int(C.MPV_EVENT_PROPERTY_CHANGE)    //   = 22,
+	QUEUE_OVERFLOW     = int(C.MPV_EVENT_QUEUE_OVERFLOW)     //   = 24,
+	HOOK               = int(C.MPV_EVENT_HOOK)               //   = 25,
+}
+
+pub const EVENT_NONE = int(C.MPV_EVENT_NONE) // = 0
 pub const EVENT_SHUTDOWN = int(C.MPV_EVENT_SHUTDOWN) //          = 1,
 pub const EVENT_LOG_MESSAGE = int(C.MPV_EVENT_LOG_MESSAGE) //       = 2,
 pub const EVENT_GET_PROPERTY_REPLY = int(C.MPV_EVENT_GET_PROPERTY_REPLY) // = 3,
@@ -172,6 +223,19 @@ pub const EVENT_PLAYBACK_RESTART = int(C.MPV_EVENT_PLAYBACK_RESTART) //   = 21,
 pub const EVENT_PROPERTY_CHANGE = int(C.MPV_EVENT_PROPERTY_CHANGE) //   = 22,
 pub const EVENT_QUEUE_OVERFLOW = int(C.MPV_EVENT_QUEUE_OVERFLOW) //   = 24,
 pub const EVENT_HOOK = int(C.MPV_EVENT_HOOK) //   = 25,
+
+pub enum Formaty {
+	none       = C.MPV_FORMAT_NONE       //  = 0,
+	string     = C.MPV_FORMAT_STRING     //     = 1,
+	osd_string = C.MPV_FORMAT_OSD_STRING //      = 2,
+	flag       = C.MPV_FORMAT_FLAG       // = 3,
+	int64      = C.MPV_FORMAT_INT64      //     = 4,
+	double     = C.MPV_FORMAT_DOUBLE     //   = 5,
+	node       = C.MPV_FORMAT_NODE       //  = 6,
+	node_array = C.MPV_FORMAT_NODE_ARRAY //     = 7,
+	node_map   = C.MPV_FORMAT_NODE_MAP   //  = 8,
+	byte_array = C.MPV_FORMAT_BYTE_ARRAY //  = 9
+}
 
 pub const format_none = C.MPV_FORMAT_NONE //  = 0,
 pub const format_string = C.MPV_FORMAT_STRING //     = 1,
