@@ -144,8 +144,22 @@ fn init() {
 	assert sizeofx[Event]() == sizeof[C.mpv_event](), 'C/V struct size not match'
 }
 
-// pub fn (me &Event) clone_deep() &Event {
-// }
+pub struct Node {
+pub mut:
+	u Nodesub
+    format Formaty
+}
+
+pub union Nodesub {
+pub mut:
+	str charptr
+	flag cint
+	i64val i64
+	f64val f64
+	list voidptr // struct mpv_node_list*
+	ba voidptr // struct mpv_byte_array
+}
+
 
 @[typedef]
 struct C.mpv_event {}
@@ -157,10 +171,16 @@ pub mut:
 	error          cint
 	reply_userdata u64
 	data           voidptr
-	// mpv_event_id event_id;
-	// int error;
-	// uint64_t reply_userdata;
-	// void *data;
+	// data  		Eventsub
+}
+
+pub union Eventsub {
+	log_message &EventLogMessage = vnil
+	client_message &EventClientMessage = vnil
+	property &EventProperty = vnil
+	start_file &EventStartFile = vnil
+	end_file &EventEndFile = vnil
+	command &EventCommand = vnil
 }
 
 pub struct EventLogMessage {
@@ -184,10 +204,43 @@ pub union NodeValue {
 	ba     voidptr
 }
 
-pub struct Node {
+pub struct Node_ {
 pub:
 	u      NodeValue
 	format cint
+}
+
+pub struct EventProperty {
+	pub mut:
+	name charptr
+    format cint
+	data voidptr
+}
+
+pub struct EventStartFile {
+	pub mut:
+    playlist_entry_id i64
+}
+
+pub struct EventEndFile {
+	pub mut:
+	reason cint
+    // mpv_end_file_reason reason;
+	error cint
+    playlist_entry_id i64
+	playlist_insert_id i64
+	playlist_insert_num_entries cint
+}
+
+pub struct EventClientMessage {
+	pub mut:
+    num_args cint
+    args voidptr // todo &charptr = vnil
+}
+
+pub struct EventCommand {
+	pub mut:
+    result Node_
 }
 
 pub enum Eventy {
