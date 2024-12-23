@@ -6,12 +6,15 @@ import log
 // #pkgconfig linux libffi
 #flag -DFFI_GO_CLOSURES=1
 #flag linux -lffi
-// #flag -lffi
 // #flag darwin  -lffi-trampolines //
 #flag -I@VMODROOT/
 #flag @VMODROOT/ffiv.o
 #flag darwin -I/Library/Developer/CommandLineTools/SDKs/MacOSX11.sdk/usr/include/ffi
-#flag darwin -Wl,@VMODROOT/../../.nix-profile/lib/libffi.dylib
+$if macos {
+#flag darwin -lffi -L @VMODROOT/../../.nix-profile/lib/
+} $else {
+#flag -lffi -Wl,-rpath=@VMODROOT/../../.nix-profile/lib/
+}
 #include "@VMODROOT/ffiv.h"
 #include "ffi.h"
 
