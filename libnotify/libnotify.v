@@ -9,20 +9,20 @@ import vcp
 #include "libnotify/notify.h"
 #include "libnotify/notification.h"
 
-fn C.notify_init(app_name byteptr) byte
+fn C.notify_init(app_name byteptr) u8
 fn C.notify_uninit()
 fn C.notify_is_initted() bool
 fn C.notify_get_app_name() byteptr
 fn C.notify_set_app_name(byteptr)
 fn C.notify_get_server_caps() voidptr
 fn C.notify_get_server_info(ret_name &byteptr, ret_vendor &byteptr,
-	ret_version &byteptr, ret_spec_version &byteptr) byte
+	ret_version &byteptr, ret_spec_version &byteptr) u8
 
 
 fn C.notify_notification_get_type() int
 fn C.notify_notification_new(summary byteptr, body byteptr, icon byteptr) voidptr
-fn C.notify_notification_update(... voidptr) byte
-fn C.notify_notification_show(... voidptr) byte
+fn C.notify_notification_update(... voidptr) u8
+fn C.notify_notification_show(... voidptr) u8
 fn C.notify_notification_set_timeout(... voidptr)
 fn C.notify_notification_set_category()
 fn C.notify_notification_set_urgency()
@@ -32,7 +32,7 @@ fn C.notify_notification_set_app_name()
 fn C.notify_notification_clear_hints()
 fn C.notify_notification_add_action()
 fn C.notify_notification_clear_actions()
-fn C.notify_notification_close(voidptr, voidptr) byte
+fn C.notify_notification_close(voidptr, voidptr) u8
 fn C.notify_notification_get_closed_reason()
 
 fn notify_init(appname string) bool { return C.notify_init(appname.str) == 1 }
@@ -69,7 +69,7 @@ fn newnotification() &Notification {
 	nty.notion = ptr
 	return nty
 }
-fn (nty mut Notification) close() bool {
+fn (nty & Notification) close() bool {
 	rv := C.notify_notification_close(nty.notion, 0)
 	nty.notion = vnil
 	return rv == 1
@@ -153,4 +153,3 @@ fn (nty mut Notify) clear_expires() {
 		news.free()
 	}
 }
-
