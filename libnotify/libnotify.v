@@ -52,9 +52,6 @@ mut:
 	timeout int
 	ctime time.Time
 }
-fn notification_fromptr(ptr voidptr) &Notification{
-    return unsafe {&Notification(ptr)}
-}
 
 fn newnotification() &Notification {
 	if notify_is_initted() == false { notify_init('xlibvn') }
@@ -94,7 +91,7 @@ fn (nty mut Notification) set_timeout(timeoutms int) {
 // 可能是 相应 fd没有hook到，并且是阻塞的，不能用于corona fiber
 pub struct Notify {
 mut:
-	nters []u64
+	nters []&Notification
 	timeoutms int
 }
 
@@ -106,7 +103,7 @@ pub fn newnotify(timeoutms int) &Notify {
 
 pub fn (nty mut Notify) add(summary string, body string, icon string, timeoutms int) {
 	mut nter := newnotification()
-	nty.nters << u64(nter)
+	nty.nters << nter
 	nter.set_timeout(timeoutms)
 	nter.update(summary, body, icon)
 	nter.show()
@@ -119,7 +116,7 @@ pub fn (nty mut Notify) replace(summary string, body string, icon string, timeou
 		return
 	}
 	nterx := nty.nters[nty.nters.len-1]
-	mut nter := notification_fromptr(nterx)
+	mut nter := nterx
 	nter.update(summary, body, icon)
 	nter.show()
 	nty.clear_expires()
@@ -133,12 +130,12 @@ fn (nty mut Notify) clear_expires() {
 	vcp.info('totn=$n')
 	nowt := time.now()
 
-	mut news := []u64{}
+	mut news := []&Notification{}
 	for nterx in nty.nters {
-        mut nter := notification_fromptr(nterx)
+        mut nter := nterx
 		if nowt.unix() - nter.ctime.unix() > 2*nter.timeout/1000 {
 			nter.close()
-			free(nter)
+			free(nter) // lets GC do that ???
 		}else{
 			news << nterx
 		}
@@ -148,8 +145,8 @@ fn (nty mut Notify) clear_expires() {
 		nty.nters = news
 		deln := olds.len - news.len
 		vcp.info('deln=$deln')
-		olds.free()
+		olds.free() // lets GC do that ???
 	}else{
-		news.free()
+		news.free() // lets GC do that
 	}
 }
