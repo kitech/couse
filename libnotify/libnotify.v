@@ -127,7 +127,7 @@ fn (nty mut Notify) clear_expires() {
 		nty.timeoutms = nty.timeoutms
 	}
 	n := nty.nters.len
-	vcp.info('totn=$n')
+	vcp.debug('totn=$n')
 	nowt := time.now()
 
 	mut news := []&Notification{}
@@ -144,7 +144,7 @@ fn (nty mut Notify) clear_expires() {
 		olds := nty.nters
 		nty.nters = news
 		deln := olds.len - news.len
-		vcp.info('deln=$deln')
+		vcp.debug('deln=$deln')
 		olds.free() // lets GC do that ???
 	}else{
 		news.free() // lets GC do that
