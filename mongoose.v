@@ -1,9 +1,10 @@
 module mongoose
 
-import mkuse.vpp.xnet
+// import mkuse.vpp.xnet
 // import mkuse.vpp.xlog
 import log
 
+// binding version: x.x-2018???
 // #flag @VMODROOT/mongoose/mongoose.o
 #flag -I@VMODROOT/mongoose/
 #include "mongoose.h"
@@ -63,17 +64,17 @@ struct C.mg_str {
 	len C.size_t
 }
 
-pub struct Mgr {
+pub struct Mgr0 {
 	cobjmem [100]u8
 mut:
 	cobj &C.mg_mgr = vnil
 }
 
-const (gmgr = &Mgr{} )
+const (gmgr = &Mgr0{} )
 fn init() {
 	mut mgr := gmgr
 	// mgr.cobj = mgr.cobjmem as &C.mg_mgr
-	C.mg_mgr_init(mgr.cobj)
+	// C.mg_mgr_init(mgr.cobj)
 }
 
 pub struct Conn {
