@@ -151,6 +151,8 @@ pub mut:
 }
 
 pub fn (e Event) isdir() bool { return int(e.mask) & isdir > 0 }
+pub fn (e Event) evstr() string { return maskname(e.mask) }
+pub fn (e Event) filepath() string { return os.join_path(e.orig, e.name) }
 
 pub fn new() &Inotify {
 	mut this := &Inotify{}
