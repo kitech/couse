@@ -1,5 +1,5 @@
 
-import mkuse.inotify
+import couse.inotify
 
 import vcp
 
