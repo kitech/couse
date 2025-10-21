@@ -1,4 +1,4 @@
-module xlibv
+module libnotify
 
 import time
 // import mkuse.vpp.xlog

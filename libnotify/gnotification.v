@@ -1,4 +1,4 @@
-module xlibv
+module libnotify
 
 // seems gnotification is successor of libnotify
 

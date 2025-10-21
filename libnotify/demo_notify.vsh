@@ -1,6 +1,6 @@
 import time
 import rand
-import mkuse.xlibv
+import couse.libnotify
 
 fn main() {
 	denotify_demo(vnil)
