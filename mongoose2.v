@@ -10,7 +10,14 @@ struct C.mg_mgr{}
 pub type Mgr = C.mg_mgr
 struct C.mg_connection{
 pub mut:
-    is_closing int
+    // is_closing int // bitfield
+    recv C.mg_iobuf
+}
+struct C.mg_iobuf {
+    buf byteptr // unsigned char *buf;  // Pointer to stored data
+    size isize // size_t size;         // Total size available
+    len isize // size_t len;          // Current number of bytes
+    align isize // size_t align;        // Alignment during allocation
 }
 pub type Mgconn = C.mg_connection
 struct C.mg_http_message{
@@ -99,7 +106,7 @@ pub fn (c &Mgconn) http_reply_error(stcode int, error string) {
     c.http_reply(stcode, "", error)
 }
 pub fn (c &Mgconn) http_reply_ok() {
-    c.http_reply(200, "", "")
+    c.http_reply(200, "", "It's just works\n")
 }
 
 // dont too much data, need temp build data string
@@ -124,6 +131,13 @@ pub fn (c &Mgconn) http_reply(stcode int, headers Mgheaders, bodys ... string) {
 
 fn C.mg_close_conn(...voidptr)
 pub fn (c &Mgconn) close() { C.mg_close_conn(c) }
+
+pub fn (c &Mgconn) set_closing() { 
+    c2 := &C.mg_connection(c)
+    c99 {
+        c2->is_closing = 1;
+    }
+}
 
 fn C.mg_send(... voidptr) cint
 
