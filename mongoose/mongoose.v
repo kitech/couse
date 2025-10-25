@@ -5,8 +5,8 @@ module mongoose
 import log
 
 // binding version: x.x-2018???
-// #flag @VMODROOT/mongoose/mongoose.o
-#flag -I@VMODROOT/mongoose/
+// #flag @DIR/mongoose.o
+#flag -I@DIR/
 #include "mongoose.h"
 #include "mongoose_typedef.h"
 

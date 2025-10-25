@@ -7,15 +7,15 @@ import log
 #flag -DFFI_GO_CLOSURES=1
 #flag linux -lffi
 // #flag darwin  -lffi-trampolines //
-#flag -I@VMODROOT/
-#flag @VMODROOT/ffiv.o
+#flag -I@DIR/
+#flag @DIR/ffiv.o
 #flag darwin -I/Library/Developer/CommandLineTools/SDKs/MacOSX11.sdk/usr/include/ffi
 $if macos {
-#flag darwin -lffi -L @VMODROOT/../../.nix-profile/lib/
+#flag darwin -lffi -L @DIR/../../.nix-profile/lib/
 } $else {
-#flag -lffi -Wl,-rpath=@VMODROOT/../../.nix-profile/lib/
+#flag -lffi -Wl,-rpath=@DIR/../../.nix-profile/lib/
 }
-#include "@VMODROOT/ffiv.h"
+#include "@DIR/ffiv.h"
 #include "ffi.h"
 
 pub const default_abi = C.FFI_DEFAULT_ABI
