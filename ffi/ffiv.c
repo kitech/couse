@@ -1,4 +1,4 @@
-#include <ffiv.h>
+#include <ffi.h>
 
 ffi_type* ffi_get_type_obj(int ty) {
     ffi_type* tyobj = 0;

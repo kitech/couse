@@ -15,8 +15,8 @@ $if macos {
 } $else {
 #flag -lffi -Wl,-rpath=@DIR/../../.nix-profile/lib/
 }
-#include "@DIR/ffiv.h"
-#include "ffi.h"
+// #include "@DIR/ffiv.h"
+#include <ffi.h>
 
 pub const default_abi = C.FFI_DEFAULT_ABI
 
@@ -89,7 +89,7 @@ pub const type_pointer = voidptr(&C.ffi_type_pointer)
 // pub const	type_uint = $if x64 || amd64 || arm64 { type_uint64 } $else { type_uint32}
 
 @[typedef]
-struct C.ffi_type {}
+pub struct C.ffi_type {}
 
 pub type Type = C.ffi_type
 
