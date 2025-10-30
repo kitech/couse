@@ -1,7 +1,7 @@
 Module {
-	name: 'couse'
-	description: 'cousevvv'
+	name: 'touse'
+	description: 'tousevvv'
 	version: '0.0.0'
-	license: 'GPL2'
+	license: 'GPL'
 	dependencies: []
 }
