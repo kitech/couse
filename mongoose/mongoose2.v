@@ -6,21 +6,52 @@ import vcp
 #flag -lmongoose
 #include <mongoose.h>
 
-struct C.mg_mgr{}
-pub type Mgr = C.mg_mgr
-struct C.mg_connection{
-pub mut:
-    // is_closing int // bitfield
-    recv C.mg_iobuf
+c99 {
+    typedef struct mg_str mg_str;
+    typedef struct mg_mgr mg_mgr;
+    typedef struct mg_connection mg_connection;
+    typedef struct mg_iobuf mg_iobuf;
+    typedef struct mg_http_message mg_http_message;
 }
-struct C.mg_iobuf {
+
+pub type Mgr = C.mg_mgr
+pub struct C.mg_mgr{}
+pub type Mgaddr = C.mg_addr
+pub struct C.mg_addr{}
+pub type Mgconn = C.mg_connection
+pub struct C.mg_connection{
+pub mut:
+    is_closing int // bitfield
+    is_draining int // bitfield
+    is_resp int // bitfield
+    is_full int // bitfield
+    is_readable int // bitfield
+    is_writable int // bitfield
+    is_io_err int // bitfield
+    is_arp_looking int // bitfield
+    is_udp int // bitfield
+    is_websocket int // bitfield
+    
+    next &Mgconn
+    mgr &Mgr
+    loc Mgaddr
+    rem Mgaddr
+    
+    recv Mgiobuf // C.mg_iobuf
+    send Mgiobuf // C.mg_iobuf
+    fd voidptr
+    id usize
+}
+pub type Mgiobuf = C.mg_iobuf
+pub struct C.mg_iobuf {
+    pub mut:
     buf byteptr // unsigned char *buf;  // Pointer to stored data
     size isize // size_t size;         // Total size available
     len isize // size_t len;          // Current number of bytes
     align isize // size_t align;        // Alignment during allocation
 }
-pub type Mgconn = C.mg_connection
-struct C.mg_http_message{
+pub type MgHttpMsg = C.mg_http_message
+pub struct C.mg_http_message{
     pub mut:
     method Mgstr
     uri Mgstr
@@ -31,10 +62,10 @@ struct C.mg_http_message{
     head Mgstr
     message Mgstr // Request + headers + body
 }
-pub type MgHttpMsg = C.mg_http_message
 pub type MgreqType = MgHttpMsg | usize
 pub type MgprocFunc = fn(c &Mgconn, ev Mgev, evdata voidptr)
 struct C.mg_str{
+    pub mut:
     buf charptr
     len usize
 }
@@ -81,18 +112,17 @@ pub fn mgstrofv(s &string) &C.mg_str {
     return unsafe { &C.mg_str(voidptr(&s)) }
 }
 
-/*
-fn C.mg_match(...voidptr) cint
-pub fn mg_match1(s string, d string) bool {
-    s2 := *mgstrofv(&s)
-    d2 := *mgstrofv(&d)
-    rv := C.mg_match(s2, d2, vnil)
-    return rv.ok()
+pub fn C.mg_match(...voidptr) cint
+
+pub fn (s0 Mgstr) match(s Mgstr) bool {
+    rv := C.mg_match(s0, s, vnil)
+    return rv == 1
 }
-pub fn mg_match2(s C.mg_str, d string) bool {
-    return mg_match1(*mgstr2v(&s), d)
+
+pub fn (s0 Mgstr) matchv(s string) bool {
+    rv := C.mg_match(s0, *&Mgstr(&s), vnil)
+    return rv == 1
 }
-*/
 
 /////////
 
@@ -132,11 +162,16 @@ pub fn (c &Mgconn) http_reply(stcode int, headers Mgheaders, bodys ... string) {
 fn C.mg_close_conn(...voidptr)
 pub fn (c &Mgconn) close() { C.mg_close_conn(c) }
 
-pub fn (c &Mgconn) set_closing() { 
-    c2 := &C.mg_connection(c)
-    c99 {
-        c2->is_closing = 1;
-    }
+pub fn (c &Mgconn) set_closing() {
+    c.is_closing = 1
+}
+
+pub fn (c &Mgconn) set_draining() {
+    c.is_draining = 1
+}
+
+pub fn (c &Mgconn) set_resp() { 
+    c.is_resp = 0
 }
 
 fn C.mg_send(... voidptr) cint
@@ -172,3 +207,26 @@ pub enum Mgev  {
     wakeup = C.MG_EV_WAKEUP     // mg_wakeup() data received    struct mg_str *data
     user = C.MG_EV_USER        // Starting ID for user events
 }
+
+pub enum LogLevel {
+    llnone = C.MG_LL_NONE
+    llerror = C.MG_LL_ERROR
+    llinfo = C.MG_LL_INFO
+    lldebug = C.MG_LL_DEBUG
+    llverbose = C.MG_LL_VERBOSE
+}
+
+pub fn log_set(ll LogLevel) { C.mg_log_set(ll) }
+
+fn C.mg_log_set(...voidptr)
+fn C.mg_mgr_init(...voidptr)
+fn C.mg_mgr_free(...voidptr)
+fn C.mg_mgr_poll(...voidptr) int
+fn C.mg_bind(...voidptr) voidptr
+// fn C.mg_set_protocol_http_websocket(...voidptr)
+fn C.mg_send(...voidptr) cint
+fn C.mg_send_head(...voidptr)
+fn C.mg_send_response_line(...voidptr)
+fn C.mg_http_send_error(...voidptr)
+fn C.mg_http_send_redirect(...voidptr)
+fn C.mbuf_remove(...voidptr)
