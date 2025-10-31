@@ -1,4 +1,4 @@
-module mongoose
+module mgs
 
 import vcp
 
@@ -16,9 +16,9 @@ c99 {
 
 pub type Mgr = C.mg_mgr
 pub struct C.mg_mgr{}
-pub type Mgaddr = C.mg_addr
+pub type Addr = C.mg_addr
 pub struct C.mg_addr{}
-pub type Mgconn = C.mg_connection
+pub type Conn = C.mg_connection
 pub struct C.mg_connection{
 pub mut:
     is_closing int // bitfield
@@ -31,18 +31,20 @@ pub mut:
     is_arp_looking int // bitfield
     is_udp int // bitfield
     is_websocket int // bitfield
+    is_listening int // bitfield
     
-    next &Mgconn
+    next &Conn
     mgr &Mgr
-    loc Mgaddr
-    rem Mgaddr
+    loc Addr
+    rem Addr
     
-    recv Mgiobuf // C.mg_iobuf
-    send Mgiobuf // C.mg_iobuf
+    recv Iobuf // C.mg_iobuf
+    send Iobuf // C.mg_iobuf
     fd voidptr
     id usize
+    fn_data voidptr
 }
-pub type Mgiobuf = C.mg_iobuf
+pub type Iobuf = C.mg_iobuf
 pub struct C.mg_iobuf {
     pub mut:
     buf byteptr // unsigned char *buf;  // Pointer to stored data
@@ -50,29 +52,29 @@ pub struct C.mg_iobuf {
     len isize // size_t len;          // Current number of bytes
     align isize // size_t align;        // Alignment during allocation
 }
-pub type MgHttpMsg = C.mg_http_message
+pub type HttpMsg = C.mg_http_message
 pub struct C.mg_http_message{
     pub mut:
-    method Mgstr
-    uri Mgstr
-    query Mgstr
-    proto Mgstr
+    method Str
+    uri Str
+    query Str
+    proto Str
     
-    body Mgstr
-    head Mgstr
-    message Mgstr // Request + headers + body
+    body Str
+    head Str
+    message Str // Request + headers + body
 }
-pub type MgreqType = MgHttpMsg | usize
-pub type MgprocFunc = fn(c &Mgconn, ev Mgev, evdata voidptr)
+pub type ReqType = HttpMsg | usize
+pub type ProcFunc = fn(c &Conn, ev Ev, evdata voidptr)
 struct C.mg_str{
     pub mut:
     buf charptr
     len usize
 }
-pub type Mgstr = C.mg_str
+pub type Str = C.mg_str
 
-pub fn (s Mgstr) tov() string { return unsafe { *&string(voidptr(&s)) } }
-pub fn (s Mgstr) dup() string { return tosdup(s.buf, int(s.len)) }
+pub fn (s Str) tov() string { return unsafe { *&string(voidptr(&s)) } }
+pub fn (s Str) dup() string { return tosdup(s.buf, int(s.len)) }
 
 fn C.mg_mgr_init(...voidptr)
 fn C.mg_log_set(...voidptr)
@@ -87,22 +89,19 @@ pub fn Mgr.new() &Mgr {
 fn C.mg_mgr_free(...voidptr)
 pub fn (r &Mgr) free() { C.mg_mgr_free(&r) }
 
-fn C.mg_http_listen(...voidptr)
+fn C.mg_http_listen(...voidptr) &Conn
+fn C.mg_listen(...voidptr) &Conn
 
 // addr http://ip:port/
-pub fn (r &Mgr) http_listen(addr string, evproc MgprocFunc) {
-    C.mg_http_listen(r, addr.str, voidptr(evproc), vnil)
+pub fn (r &Mgr) http_listen(url string, evproc ProcFunc, cbval voidptr) &Conn {
+    c := C.mg_http_listen(r, url.str, voidptr(evproc), cbval)
+    return c
 }
 
 fn C.mg_mgr_poll(...voidptr)
 
-pub fn (r &Mgr) runloop(interval ... int) {
-    mut stop := false
-    mut ival := firstofv(interval)
-    ival = if ival <= 0 { 3000 } else { ival }
-    for i:=100; ! stop; i++ {
+pub fn (r &Mgr) poll(ival int) {
         C.mg_mgr_poll(r, ival)
-    }
 }
 
 pub fn mgstr2v(s &C.mg_str) &string {
@@ -114,13 +113,13 @@ pub fn mgstrofv(s &string) &C.mg_str {
 
 pub fn C.mg_match(...voidptr) cint
 
-pub fn (s0 Mgstr) match(s Mgstr) bool {
+pub fn (s0 Str) match(s Str) bool {
     rv := C.mg_match(s0, s, vnil)
     return rv == 1
 }
 
-pub fn (s0 Mgstr) matchv(s string) bool {
-    rv := C.mg_match(s0, *&Mgstr(&s), vnil)
+pub fn (s0 Str) matchv(s string) bool {
+    rv := C.mg_match(s0, *&Str(&s), vnil)
     return rv == 1
 }
 
@@ -130,17 +129,10 @@ pub fn (s0 Mgstr) matchv(s string) bool {
                    // const char *body_fmt, ...);
 fn C.mg_http_reply(...voidptr)
 
-pub type Mgheaders = map[string]string | []string | string
-
-pub fn (c &Mgconn) http_reply_error(stcode int, error string) {
-    c.http_reply(stcode, "", error)
-}
-pub fn (c &Mgconn) http_reply_ok() {
-    c.http_reply(200, "", "It's just works\n")
-}
+pub type Headers = map[string]string | []string | string
 
 // dont too much data, need temp build data string
-pub fn (c &Mgconn) http_reply(stcode int, headers Mgheaders, bodys ... string) {
+pub fn (c &Conn) http_reply(stcode int, headers Headers, bodys ... string) {
     mut hdrstr := ""
     match headers {
         map[string]string {
@@ -160,31 +152,31 @@ pub fn (c &Mgconn) http_reply(stcode int, headers Mgheaders, bodys ... string) {
 }
 
 fn C.mg_close_conn(...voidptr)
-pub fn (c &Mgconn) close() { C.mg_close_conn(c) }
+pub fn (c &Conn) close() { C.mg_close_conn(c) }
 
-pub fn (c &Mgconn) set_closing() {
+pub fn (c &Conn) set_closing() {
     c.is_closing = 1
 }
 
-pub fn (c &Mgconn) set_draining() {
+pub fn (c &Conn) set_draining() {
     c.is_draining = 1
 }
 
-pub fn (c &Mgconn) set_resp() { 
+pub fn (c &Conn) set_resp() { 
     c.is_resp = 0
 }
 
 fn C.mg_send(... voidptr) cint
 
-pub fn (c &Mgconn) send(data voidptr, len usize) bool {
+pub fn (c &Conn) send(data voidptr, len usize) bool {
     rv := C.mg_send(c, data, len)
     return rv.ok()
 }
-pub fn (c &Mgconn) send1(data string) bool {
+pub fn (c &Conn) send1(data string) bool {
     return c.send(data.str, usize(data.len))
 }
 
-pub enum Mgev  {
+pub enum Ev  {
     error = C.MG_EV_ERROR      // Error                        char *error_message
     open = C.MG_EV_OPEN       // Connection created           NULL
     poll = C.MG_EV_POLL       // mg_mgr_poll iteration        uint64_t *uptime_millis
@@ -206,6 +198,13 @@ pub enum Mgev  {
     sntp_time = C.MG_EV_SNTP_TIME  // SNTP time received           uint64_t *epoch_millis
     wakeup = C.MG_EV_WAKEUP     // mg_wakeup() data received    struct mg_str *data
     user = C.MG_EV_USER        // Starting ID for user events
+}
+
+pub enum Protocol {
+    http 
+    websocket 
+    arp
+    origin
 }
 
 pub enum LogLevel {
