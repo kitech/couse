@@ -53,7 +53,7 @@ pub fn new_uds(path string) &UnixSocketSender{
     return o
 }
 // not work for x.json2
-pub type RpcResultDataType = string | int | f64 //  | int | f64
+pub type RpcResultDataType = string | int | f64  | bool //  | int | f64
 struct RpcResult {
     pub mut:
     data RpcResultDataType @[json:omitempty]
@@ -72,7 +72,7 @@ pub fn (o &UnixSocketSender) send(cmd string, args...Anyer) !RpcResultDataType {
             bool { argarr << aa.str().trim('&') }
             int { argarr << aa.str()}
             f32 { argarr << aa.str()}
-            f64 { argarr << aa.str()}
+            f64 { argarr << aa.str().trim('&')}
             string { argarr << '"$aa"' }
             else { argarr << '"$aa"'}
         }
@@ -80,16 +80,53 @@ pub fn (o &UnixSocketSender) send(cmd string, args...Anyer) !RpcResultDataType {
     line := '{ "command": [${argarr.join(", ")}] }\n'
     log.info("* >> ${line.len} $line".trim_space()+" :${@FILE_LINE}")
     n := o.con.write_string(line) !
-    buf := []u8{len:399}
-    n = o.con.read(mut buf) !
-    resjcc := buf[..n].bytestr()
+    // buf := []u8{len:399}
+    // n = o.con.read(mut buf) !
+    // resjcc := buf[..n].bytestr()
+    resjcc := o.read_response_skip_event()!
     assert resjcc.starts_with("{") && resjcc.ends_with("}\n")
     log.info("* << $n $resjcc".trim_space()+" :${@FILE_LINE}\n")
     
     return parse_json_result(resjcc)
 }
 fn omitor(err IError) {}
+
+pub fn (o &UnixSocketSender) read_response_skip_event() !string {
+    for i := 0; i < 3 ; i ++ {
+        buf := []u8{len:999}
+        n := o.con.read(mut buf) !
+        resjcc := buf[..n].bytestr()
+        assert resjcc.starts_with("{") && resjcc.ends_with("}\n")
+        // log.info("* << $n $resjcc".trim_space().compact()+" :${@FILE_LINE}\n")
+        
+        if resjcc.starts_with('{"event":') {
+            log.info("Ignore event line ${resjcc.compact()} :${@FILE_LINE}")
+        }else{
+            return resjcc
+        }
+    }
+    return ""
+}
+
+/*
+{"event":"audio-reconfig"}
+{"event":"video-reconfig"}
+{"event":"end-file","reason":"stop","playlist_entry_id":1}
+{"event":"start-file","playlist_entry_id":2}
+*/
+
+// TODO how process multiple lines
 pub fn parse_json_result(resjcc string) !RpcResultDataType {
+    lines := resjcc.split_into_lines()
+    assert lines.len > 0, resjcc.compact()
+    for line in lines {
+        if line.starts_with('{"event":') {
+            
+        }
+    }
+    return parse_json_result_oneline(lines[0])
+}
+pub fn parse_json_result_oneline(resjcc string) !RpcResultDataType {
     // parse result 111
     // oh always error indeed
     rvo := json2.decode[RpcResult](resjcc) or {
@@ -110,13 +147,19 @@ pub fn parse_json_result(resjcc string) !RpcResultDataType {
         int { rvo.data = datax }
         i64 { rvo.data = RpcResultDataType(int(datax)) }
         string { rvo.data = datax }
+        f64 { rvo.data = datax }
+        bool { rvo.data = datax }
         json2.Null { rvo.data = 1 }
+        map[string]json2.Any { // {"playlist_entry_id":2}
+            log.debug("Got it `$datax` :${@FILE_LINE}")
+            rvo.data = datax.str() 
+        }
         else {
             // sofork datax.str() == '[]'
-            log.debug("'$datax' :${@FILE_LINE}")
+            log.debug("`$datax` :${@FILE_LINE}")
             if datax.str() == '[]' {
             }else{
-                panic('notimpl $datax')
+                panic('notimpl `$datax`')
             }
         }
     }
@@ -129,6 +172,7 @@ pub fn (o &UnixSocketSender) sendraw(cmdjson string) !RpcResultDataType {
     if o.con == vnil {
         con := unix.connect_stream(o.path) !
         o.con = con
+        // o.send("disable_event", "all") or {omitor(err)}
     }
     line := cmdjson
     log.info("* >> ${line.len} $line")
@@ -196,8 +240,17 @@ pub fn (o &ClibSender) sendraw_async(cmdjson string) ! {
 
 ///// commands
 
+pub fn (o&Cmder) disable_event() {
+    o.command(@FN, "all") 
+}
+
 pub fn (o&Cmder) loadfile(file string) {
     o.command(@FN, file) 
+}
+
+pub fn (o &Cmder) seek(pos f64, relative bool) {
+    flag := if relative { "relative" } else { "absolute" }
+    o.command(@FN, pos, flag)
 }
 
 // { "command": ["set_property", "pause", true] }
@@ -282,6 +335,11 @@ pub enum Property {
     playtime_remaining
     playback_time
     pause
+    playlist_pos
+    playlist_pos_1
+    seekable
+    seeking
+    mpv_version
 }
 
 fn (p Property) tocmdname() string {
